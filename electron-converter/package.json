@@ -1,0 +1,40 @@
+{
+  "name": "markdown-universal-converter",
+  "version": "1.0.0",
+  "description": "A powerful Markdown to Word and PDF converter.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder build --win",
+    "pack": "electron-builder dir"
+  },
+  "keywords": [
+    "markdown",
+    "converter",
+    "word",
+    "pdf",
+    "pandoc",
+    "electron"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "markdown-it": "^14.0.0",
+    "mime-types": "^2.1.35"
+  },
+  "build": {
+    "appId": "com.antigravity.mdconverter",
+    "productName": "MD Universal Converter",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    }
+  }
+}

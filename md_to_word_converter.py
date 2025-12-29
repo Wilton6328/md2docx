@@ -1,7 +1,7 @@
 """
-Markdown to Word Converter
-高穩定性 Markdown 轉 Word 桌面應用程式
-使用 CustomTkinter GUI + python-docx
+Markdown Universal Converter
+高穩定性 Markdown 轉 Word/PDF 桌面應用程式
+使用 CustomTkinter GUI + python-docx + weasyprint
 確保使用 Word 內建樣式，無自定義樣式
 """
 
@@ -17,6 +17,19 @@ from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+
+# 條件導入 PDF 相關套件
+try:
+    import markdown
+    from weasyprint import HTML, CSS
+    PDF_AVAILABLE = True
+except (ImportError, OSError) as e:
+    PDF_AVAILABLE = False
+    print("[!] PDF conversion feature is not available")
+    print("    Reason: Missing GTK3 runtime library or dependencies")
+    print("    Note: Word conversion feature is still fully functional!")
+    print("    Installation guide: Please refer to WINDOWS_PDF_SETUP.md")
+    print()
 
 
 class MarkdownToWordConverter:
@@ -339,6 +352,188 @@ class MarkdownToWordConverter:
         pPr.append(pBdr)
 
 
+class MarkdownToPdfConverter:
+    """Markdown 轉 PDF 核心轉換引擎"""
+    
+    def __init__(self):
+        if not PDF_AVAILABLE:
+            raise RuntimeError("無法使用 PDF 轉換功能：缺少 GTK3 運行時庫。請參考 WINDOWS_PDF_SETUP.md")
+        
+        self.md = markdown.Markdown(extensions=[
+            'extra',           # 支援表格、圍欄式程式碼區塊等
+            'codehilite',     # 程式碼高亮
+            'toc',            # 目錄
+            'nl2br',          # 換行轉 <br>
+        ])
+    
+    def convert(self, md_path: str, pdf_path: str) -> bool:
+        """
+        執行轉換
+        
+        Args:
+            md_path: Markdown 檔案路徑
+            pdf_path: 輸出的 PDF 檔案路徑
+            
+        Returns:
+            bool: 轉換是否成功
+        """
+        try:
+            # 讀取 Markdown 檔案（支援 UTF-8 編碼）
+            with open(md_path, 'r', encoding='utf-8') as f:
+                md_content = f.read()
+            
+            # 轉換 Markdown 為 HTML
+            html_body = self.md.convert(md_content)
+            
+            # 建立完整的 HTML 文件（含樣式）
+            html_content = self._create_html_template(html_body)
+            
+            # 轉換為 PDF
+            HTML(string=html_content).write_pdf(
+                pdf_path,
+                stylesheets=[CSS(string=self._get_pdf_styles())]
+            )
+            
+            return True
+            
+        except FileNotFoundError:
+            raise Exception(f"找不到檔案: {md_path}")
+        except PermissionError:
+            raise Exception(f"沒有權限寫入檔案: {pdf_path}")
+        except Exception as e:
+            raise Exception(f"轉換過程發生錯誤: {str(e)}")
+    
+    def _create_html_template(self, body: str) -> str:
+        """建立 HTML 模板"""
+        return f'''<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Document</title>
+</head>
+<body>
+    {body}
+</body>
+</html>'''
+    
+    def _get_pdf_styles(self) -> str:
+        """取得 PDF 樣式"""
+        return '''
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        body {
+            font-family: "Microsoft JhengHei", "PingFang TC", "Heiti TC", "STHeiti", "WenQuanYi Micro Hei", sans-serif;
+            line-height: 1.6;
+            color: #333;
+            font-size: 12pt;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            color: #2c3e50;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: bold;
+        }
+        
+        h1 { font-size: 24pt; border-bottom: 2px solid #3498db; padding-bottom: 0.3em; }
+        h2 { font-size: 20pt; border-bottom: 1px solid #bdc3c7; padding-bottom: 0.2em; }
+        h3 { font-size: 16pt; }
+        h4 { font-size: 14pt; }
+        h5 { font-size: 12pt; }
+        h6 { font-size: 11pt; color: #7f8c8d; }
+        
+        p {
+            margin-bottom: 1em;
+            text-align: justify;
+        }
+        
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        blockquote {
+            border-left: 4px solid #3498db;
+            margin: 1em 0;
+            padding-left: 1em;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        
+        ul, ol {
+            margin-bottom: 1em;
+            padding-left: 2em;
+        }
+        
+        li {
+            margin-bottom: 0.5em;
+        }
+        
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        hr {
+            border: none;
+            border-top: 2px solid #bdc3c7;
+            margin: 2em 0;
+        }
+        
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        '''
+
+
 class App(ctk.CTk):
     """主應用程式視窗"""
     
@@ -346,8 +541,8 @@ class App(ctk.CTk):
         super().__init__()
         
         # 視窗設定
-        self.title("Markdown to Word Converter")
-        self.geometry("700x400")
+        self.title("Markdown Universal Converter")
+        self.geometry("750x500")
         self.resizable(False, False)
         
         # 設定主題
@@ -358,12 +553,17 @@ class App(ctk.CTk):
         self.file_path = tk.StringVar()
         self.output_path = tk.StringVar()
         self.status_text = tk.StringVar(value="就緒")
+        self.output_format = tk.StringVar(value="word")  # 預設為 Word
         
         # 建立 UI
         self._create_widgets()
         
         # 轉換器實例
-        self.converter = MarkdownToWordConverter()
+        self.word_converter = MarkdownToWordConverter()
+        if PDF_AVAILABLE:
+            self.pdf_converter = MarkdownToPdfConverter()
+        else:
+            self.pdf_converter = None
     
     def _create_widgets(self):
         """建立所有 UI 元件"""
@@ -371,10 +571,10 @@ class App(ctk.CTk):
         # 標題
         title_label = ctk.CTkLabel(
             self,
-            text="📝 Markdown to Word Converter",
+            text="📝 Markdown Universal Converter",
             font=ctk.CTkFont(size=24, weight="bold")
         )
-        title_label.pack(pady=20)
+        title_label.pack(pady=15)
         
         # 檔案選擇框架
         file_frame = ctk.CTkFrame(self)
@@ -420,6 +620,36 @@ class App(ctk.CTk):
         )
         output_browse_btn.grid(row=1, column=2, padx=10, pady=10)
         
+        # 格式選擇框架
+        format_frame = ctk.CTkFrame(self)
+        format_frame.pack(pady=10, padx=40, fill="x")
+        
+        format_label = ctk.CTkLabel(
+            format_frame,
+            text="輸出格式:",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        format_label.pack(side="left", padx=20)
+        
+        word_radio = ctk.CTkRadioButton(
+            format_frame,
+            text="Word (.docx)",
+            variable=self.output_format,
+            value="word",
+            font=ctk.CTkFont(size=13)
+        )
+        word_radio.pack(side="left", padx=15)
+        
+        self.pdf_radio = ctk.CTkRadioButton(
+            format_frame,
+            text="PDF (.pdf)" if PDF_AVAILABLE else "PDF (.pdf) [Not Available - GTK3 Required]",
+            variable=self.output_format,
+            value="pdf",
+            font=ctk.CTkFont(size=13),
+            state="normal" if PDF_AVAILABLE else "disabled"
+        )
+        self.pdf_radio.pack(side="left", padx=15)
+        
         # 轉換按鈕
         self.convert_btn = ctk.CTkButton(
             self,
@@ -429,7 +659,7 @@ class App(ctk.CTk):
             height=50,
             width=200
         )
-        self.convert_btn.pack(pady=30)
+        self.convert_btn.pack(pady=20)
         
         # 狀態顯示
         status_frame = ctk.CTkFrame(self)
@@ -460,19 +690,29 @@ class App(ctk.CTk):
         if filename:
             self.file_path.set(filename)
             
-            # 自動設定輸出路徑
+            # 自動設定輸出路徑根據選擇的格式
             if not self.output_path.get():
                 base_path = Path(filename)
-                output_filename = base_path.stem + ".docx"
+                format_type = self.output_format.get()
+                extension = ".docx" if format_type == "word" else ".pdf"
+                output_filename = base_path.stem + extension
                 output_full_path = base_path.parent / output_filename
                 self.output_path.set(str(output_full_path))
     
     def browse_output(self):
         """選擇輸出位置"""
+        format_type = self.output_format.get()
+        if format_type == "word":
+            extension = ".docx"
+            file_type_name = "Word 文件"
+        else:
+            extension = ".pdf"
+            file_type_name = "PDF 文件"
+        
         filename = filedialog.asksaveasfilename(
             title="選擇輸出位置",
-            defaultextension=".docx",
-            filetypes=[("Word 文件", "*.docx"), ("所有檔案", "*.*")]
+            defaultextension=extension,
+            filetypes=[(file_type_name, f"*{extension}"), ("所有檔案", "*.*")]
         )
         
         if filename:
@@ -492,21 +732,35 @@ class App(ctk.CTk):
         
         # 設定輸出路徑
         output_file = self.output_path.get()
+        format_type = self.output_format.get()
+        
         if not output_file:
             base_path = Path(input_file)
-            output_filename = base_path.stem + ".docx"
+            extension = ".docx" if format_type == "word" else ".pdf"
+            output_filename = base_path.stem + extension
             output_file = str(base_path.parent / output_filename)
             self.output_path.set(output_file)
         
         # 更新狀態
-        self.status_text.set("轉換中...")
+        format_name = "Word" if format_type == "word" else "PDF"
+        self.status_text.set(f"轉換中 ({format_name})...")
         self.status_display.configure(text_color="orange")
         self.convert_btn.configure(state="disabled")
         self.update()
         
         try:
             # 執行轉換
-            self.converter.convert(input_file, output_file)
+            if format_type == "word":
+                self.word_converter.convert(input_file, output_file)
+            else:  # pdf
+                if not PDF_AVAILABLE or self.pdf_converter is None:
+                    raise Exception(
+                        "PDF conversion feature is not available!\n\n"
+                        "Reason: Missing GTK3 runtime library\n" 
+                        "Solution: Please refer to WINDOWS_PDF_SETUP.md for installation instructions\n\n"
+                        "Word conversion is still fully available."
+                    )
+                self.pdf_converter.convert(input_file, output_file)
             
             # 成功
             self.status_text.set("✓ 轉換完成！")
@@ -514,7 +768,7 @@ class App(ctk.CTk):
             messagebox.showinfo("成功", f"轉換完成！\n檔案已儲存至：\n{output_file}")
             
             # 詢問是否開啟檔案
-            if messagebox.askyesno("開啟檔案", "是否要開啟轉換後的 Word 檔案？"):
+            if messagebox.askyesno("開啟檔案", f"是否要開啟轉換後的 {format_name} 檔案？"):
                 os.startfile(output_file)
         
         except Exception as e:
