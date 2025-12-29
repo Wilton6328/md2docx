@@ -208,7 +208,7 @@ self.doc = Document('template.docx')  # 使用現有模板
 
 如果你不想自己配置 Python 環境，可以直接下載預編譯的執行檔：
 
-1. 前往 [Releases 頁面](https://github.com/yourusername/md2docx/releases)
+1. 前往 [Releases 頁面](https://github.com/Wilton6328/md2docx/releases)
 2. 下載最新版本對應您系統的檔案：
    - **Windows**: `md2docx-windows.exe`
    - **macOS**: `md2docx-macos`
@@ -237,7 +237,7 @@ self.doc = Document('template.docx')  # 使用現有模板
 - ✅ **單元測試** - Pytest 測試覆蓋率
 - ✅ **安全性掃描** - Safety & Bandit
 
-[![CI Status](https://github.com/yourusername/md2docx/workflows/CI%20-%20%E6%8C%81%E7%BA%8C%E6%95%B4%E5%90%88/badge.svg)](https://github.com/yourusername/md2docx/actions)
+[![CI Status](https://github.com/Wilton6328/md2docx/workflows/CI%20-%20%E6%8C%81%E7%BA%8C%E6%95%B4%E5%90%88/badge.svg)](https://github.com/Wilton6328/md2docx/actions)
 
 ### 🎉 自動發布 (Release)
 
@@ -311,7 +311,7 @@ md2docx/
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yourusername/md2docx.git
+git clone https://github.com/Wilton6328/md2docx.git
 cd md2docx
 
 # 2. 建立虛擬環境
