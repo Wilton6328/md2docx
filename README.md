@@ -187,22 +187,93 @@ python test_pdf_converter.py
 
 ## ⚠️ 注意事項
 
-### 不支援的 Markdown 語法
-- 註腳
-- 任務列表 `- [ ]`
-- LaTeX 數學公式
+1. **不支援的 Markdown 語法**：
+   - 註腳
+   - 任務列表 `- [ ]`
+   - LaTeX 數學公式
+   - 嵌入圖片（會被忽略）
 
-### 系統需求
-- Python 3.8+
-- Windows/macOS/Linux
-- 對於 PDF 功能：GTK3 運行時（Windows）
+2. **路徑限制**：
+   - 支援含空白和中文的路徑
+   - Windows 路徑長度限制（260 字元）
 
-### Word 版本相容性
-產生的 .docx 檔案相容：
-- Microsoft Word 2007+
-- LibreOffice Writer
-- Google Docs
-- macOS Pages
+3. **Word 版本**：
+   - 產生的 .docx 檔案相容 Word 2007 及更新版本
+
+## 🚀 快速安裝（從 Release）
+
+如果你不想自己配置 Python 環境，可以直接下載預編譯的執行檔：
+
+1. 前往 [Releases 頁面](https://github.com/yourusername/md2docx/releases)
+2. 下載最新版本對應您系統的檔案：
+   - **Windows**: `md2docx-windows.exe`
+   - **macOS**: `md2docx-macos`
+   - **Linux**: `md2docx-linux`
+3. (macOS/Linux) 賦予執行權限：
+   ```bash
+   chmod +x md2docx-*
+   ```
+4. 雙擊執行檔即可啟動程式 🎉
+
+> **無需安裝 Python 或任何依賴套件！**
+
+---
+
+## 🔄 CI/CD 與自動化部署
+
+本專案使用 GitHub Actions 實現自動化測試與發布流程。
+
+### 📊 持續整合 (CI)
+
+每次推送程式碼或建立 Pull Request 時，會自動執行：
+
+- ✅ **多平台測試** - Windows, macOS, Linux
+- ✅ **多版本測試** - Python 3.8, 3.9, 3.10, 3.11
+- ✅ **代碼品質檢查** - Black 格式化、Flake8 語法檢查
+- ✅ **單元測試** - Pytest 測試覆蓋率
+- ✅ **安全性掃描** - Safety & Bandit
+
+[![CI Status](https://github.com/yourusername/md2docx/workflows/CI%20-%20%E6%8C%81%E7%BA%8C%E6%95%B4%E5%90%88/badge.svg)](https://github.com/yourusername/md2docx/actions)
+
+### 🎉 自動發布 (Release)
+
+當推送版本標籤時（例如 `v1.0.0`），會自動：
+
+1. 在多個平台構建可執行檔
+2. 建立 GitHub Release
+3. 上傳所有平台的執行檔
+
+**如何建立新版本：**
+
+```bash
+# 1. 更新版本號碼（在 pyproject.toml）
+# 2. 提交並打標籤
+git add .
+git commit -m "Release v1.0.0"
+git tag v1.0.0
+
+# 3. 推送標籤到 GitHub
+git push origin v1.0.0
+
+# GitHub Actions 會自動構建並發布！
+```
+
+### 🔐 Secrets 與環境變數
+
+如果需要使用外部 API 或服務，可以在 GitHub Repository Settings 中設定 Secrets：
+
+1. 前往 **Settings** → **Secrets and variables** → **Actions**
+2. 點擊 **New repository secret**
+3. 設定名稱（例如 `API_KEY`）與值
+4. 在工作流程中使用：
+   ```yaml
+   env:
+     API_KEY: ${{ secrets.API_KEY }}
+   ```
+
+> 本專案目前使用 `GITHUB_TOKEN`（GitHub 自動提供）與 `CODECOV_TOKEN`（選用）。
+
+---
 
 ## 📦 專案結構
 
@@ -225,7 +296,7 @@ md2docx/
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yourusername/md2docx.git
+git clone https://github.com/Wilton6328/md2docx.git
 cd md2docx
 
 # 2. 建立虛擬環境
