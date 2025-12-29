@@ -1,0 +1,17 @@
+# 開發環境依賴套件
+# 用法: pip install -r requirements.txt -r requirements-dev.txt
+
+# 測試框架
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# 代碼品質工具
+black>=23.7.0         # 代碼格式化
+flake8>=6.1.0         # 語法檢查
+mypy>=1.5.0           # 型別檢查
+
+# 打包工具
+pyinstaller>=6.0.0    # 建立獨立執行檔
+
+# 文件生成
+sphinx>=7.2.0         # API 文件生成（選用）

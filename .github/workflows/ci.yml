@@ -1,0 +1,114 @@
+# 持續整合工作流程
+# 觸發條件：任何分支的 push 或 pull request
+name: CI - 持續整合
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  test:
+    name: 測試與代碼品質檢查
+    runs-on: ${{ matrix.os }}
+    
+    # 多環境測試矩陣
+    strategy:
+      fail-fast: false  # 即使某個環境失敗，其他環境繼續測試
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    
+    steps:
+      # 步驟 1: 檢出程式碼
+      - name: 📥 檢出程式碼 (Checkout)
+        uses: actions/checkout@v4
+      
+      # 步驟 2: 設定 Python 環境
+      - name: 🐍 設定 Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          # 啟用 pip 快取以加速安裝
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      
+      # 步驟 3: 升級 pip 與安裝依賴
+      - name: 📦 安裝依賴套件
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      
+      # 步驟 4: 代碼格式檢查
+      - name: 🎨 檢查代碼格式 (Black)
+        run: |
+          black --check --diff .
+        continue-on-error: true  # 格式問題不中斷流程，僅警告
+      
+      # 步驟 5: 語法與風格檢查
+      - name: 🔍 語法檢查 (Flake8)
+        run: |
+          # 停止構建如果有 Python 語法錯誤或未定義的名稱
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # 其他警告（line too long 等）僅顯示但不失敗
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+      
+      # 步驟 6: 執行單元測試
+      - name: 🧪 執行測試 (Pytest)
+        run: |
+          pytest -v --cov=. --cov-report=xml --cov-report=term-missing
+      
+      # 步驟 7: 上傳測試覆蓋率報告
+      - name: 📊 上傳覆蓋率報告
+        uses: codecov/codecov-action@v4
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false  # 即使上傳失敗也不中斷 CI
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      
+      # 步驟 8: 快速功能驗證（在 GUI 不可用的環境跳過）
+      - name: ✅ 功能驗證
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          # 在無頭環境中簡單導入測試
+          python -c "from md_to_word_converter import MarkdownToWordConverter; print('✓ 模組載入成功')"
+        continue-on-error: true  # GUI 環境限制不應影響 CI
+
+  lint-security:
+    name: 安全性與依賴檢查
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 檢出程式碼
+        uses: actions/checkout@v4
+      
+      - name: 🐍 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: 📦 安裝依賴
+        run: |
+          pip install -r requirements.txt
+          pip install safety bandit
+      
+      # 檢查已知安全漏洞
+      - name: 🔒 安全漏洞掃描 (Safety)
+        run: |
+          safety check --json || true
+        continue-on-error: true
+      
+      # 代碼安全性掃描
+      - name: 🛡️ 代碼安全掃描 (Bandit)
+        run: |
+          bandit -r . -f json -o bandit-report.json || true
+        continue-on-error: true
