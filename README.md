@@ -237,8 +237,6 @@ self.doc = Document('template.docx')  # 使用現有模板
 - ✅ **單元測試** - Pytest 測試覆蓋率
 - ✅ **安全性掃描** - Safety & Bandit
 
-[![CI Status](https://github.com/Wilton6328/md2docx/workflows/CI%20-%20%E6%8C%81%E7%BA%8C%E6%95%B4%E5%90%88/badge.svg)](https://github.com/Wilton6328/md2docx/actions)
-
 ### 🎉 自動發布 (Release)
 
 當推送版本標籤時（例如 `v1.0.0`），會自動：
